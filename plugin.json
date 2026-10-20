@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "name": "Truyện H",
+    "author": "PhongHome",
+    "version": 1,
+    "source": "https://truyen-h.com",
+    "description": "Đọc truyện chữ từ truyen-h.com (18+)",
+    "locale": "vi",
+    "regexp": "(https?://)?(www\\.)?truyen-h\\.com/story\\?id=.+",
+    "type": "novel",
+    "nsfw": true
+  },
+  "script": {
+    "home": "home.js",
+    "genre": "genre.js",
+    "search": "search.js",
+    "detail": "detail.js",
+    "toc": "toc.js",
+    "chap": "chap.js"
+  },
+  "config": {
+    "DOMAIN": {
+      "title": "Tên miền",
+      "default": "https://truyen-h.com",
+      "mode": "input"
+    }
+  }
+}
