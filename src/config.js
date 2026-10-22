@@ -7,6 +7,16 @@ try {
 } catch (error) {
 }
 
+// Trang chỉ cho khách đọc vài chương; đăng nhập phải qua Turnstile nên không làm được từ script.
+// Người dùng đăng nhập trên trình duyệt rồi dán chuỗi Cookie vào cài đặt COOKIE.
+let LOGIN_COOKIE = "";
+try {
+    if (COOKIE) {
+        LOGIN_COOKIE = String(COOKIE).replace(/^\s*cookie\s*:/i, "").trim();
+    }
+} catch (error) {
+}
+
 const PAGE_SIZE = 20;
 
 function normalizeUrl(url) {
@@ -19,7 +29,9 @@ function getParam(url, name) {
 }
 
 function apiFetch(path) {
-    return fetch(BASE_URL + path, { headers: { "Accept": "application/json" } });
+    let headers = { "Accept": "application/json" };
+    if (LOGIN_COOKIE) headers["Cookie"] = LOGIN_COOKIE;
+    return fetch(BASE_URL + path, { headers: headers });
 }
 
 function escapeHtml(text) {

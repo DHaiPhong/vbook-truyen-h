@@ -2,8 +2,9 @@
 // (fetch đồng bộ qua curl, Response, load, hằng số config từ plugin.json).
 // Dùng khi không kết nối được server debug trên điện thoại.
 //
-//   node tools/test.js <script.js> [tham số...] [--full]
+//   node tools/test.js <script.js> [tham số...] [--full] [--config KEY=giá-trị]
 //   node tools/test.js detail.js "https://truyen-h.com/story?id=..."
+//   node tools/test.js check_login.js --config "COOKIE=a=b; c=d"
 //
 // Chuỗi dài hơn 300 ký tự chỉ in độ dài, trừ khi có --full.
 
@@ -106,7 +107,18 @@ function checkSyntax() {
 function main() {
     const argv = process.argv.slice(2);
     const full = argv.indexOf("--full") !== -1;
-    const args = argv.filter(function (a) { return a !== "--full"; });
+    const overrides = {};
+    const args = [];
+    for (let i = 0; i < argv.length; i++) {
+        if (argv[i] === "--full") continue;
+        if (argv[i] === "--config") {
+            const kv = argv[++i] || "";
+            const eq = kv.indexOf("=");
+            overrides[kv.substring(0, eq)] = kv.substring(eq + 1);
+            continue;
+        }
+        args.push(argv[i]);
+    }
     const script = args.shift();
     if (!script) {
         console.log("Cách dùng: node tools/test.js <script.js> [tham số...] [--full]");
@@ -134,7 +146,8 @@ function main() {
     const inject = Object.keys(config).filter(function (k) {
         return !(config[k] && config[k].mode === "database");
     }).map(function (k) {
-        const v = config[k] && typeof config[k] === "object" ? config[k].default : config[k];
+        let v = config[k] && typeof config[k] === "object" ? config[k].default : config[k];
+        if (k in overrides) v = overrides[k];
         return "const " + k + " = " + JSON.stringify(String(v)) + ";";
     }).join("\n");
     vm.runInContext(inject, ctx, { filename: "config-inject" });

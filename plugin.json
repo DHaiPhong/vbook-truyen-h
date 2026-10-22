@@ -2,7 +2,7 @@
   "metadata": {
     "name": "Truyện H",
     "author": "PhongHome",
-    "version": 1,
+    "version": 2,
     "source": "https://truyen-h.com",
     "description": "Đọc truyện chữ từ truyen-h.com (18+)",
     "locale": "vi",
@@ -23,6 +23,18 @@
       "title": "Tên miền",
       "default": "https://truyen-h.com",
       "mode": "input"
+    },
+    "COOKIE": {
+      "title": "Cookie đăng nhập (dán cả chuỗi Cookie của truyen-h.com)",
+      "default": "",
+      "mode": "input"
+    }
+  },
+  "actions": {
+    "check_login": {
+      "name": "Kiểm tra đăng nhập",
+      "description": "Kiểm tra cookie đăng nhập đã dán trong cài đặt còn dùng được không",
+      "script": "check_login.js"
     }
   }
 }

@@ -31,7 +31,10 @@ function execute(url) {
             return Response.error("truyen-h.com yêu cầu xác minh bảo mật. Hãy mở truyện này bằng trình duyệt trong vBook, đọc 1 chương trên web cho qua bước xác minh, rồi quay lại tải chương.");
         }
         if (String(body.code) === "40") {
-            return Response.error("Đã hết số chương đọc miễn phí. Hãy đăng nhập truyen-h.com bằng trình duyệt trong vBook rồi thử lại.");
+            if (LOGIN_COOKIE) {
+                return Response.error("Cookie đăng nhập không còn dùng được (đã đăng xuất hoặc hết hạn). Hãy lấy lại Cookie của truyen-h.com và dán vào cài đặt extension.");
+            }
+            return Response.error("Khách chỉ đọc được vài chương. Hãy đăng nhập truyen-h.com trên trình duyệt, lấy chuỗi Cookie rồi dán vào mục \"Cookie đăng nhập\" trong cài đặt extension.");
         }
         return Response.error("HTTP " + response.status);
     }
