@@ -19,22 +19,23 @@ function execute(url) {
         if (!chapterId) return Response.error("Không tìm thấy chương " + number);
     }
 
-    let response = apiFetch("/api/stories/" + encodeURIComponent(storyId) + "/chapters/" + encodeURIComponent(chapterId));
+    let path = "/api/stories/" + encodeURIComponent(storyId) + "/chapters/" + encodeURIComponent(chapterId);
+    let response = apiFetch(path);
+    let code = errorCode(response);
+    if (code === "40" && usePastedSession()) {
+        response = apiFetch(path);
+        code = errorCode(response);
+    }
     if (!response.ok) {
-        let body = {};
-        try {
-            body = JSON.parse(response.text());
-        } catch (error) {
-        }
-        // code 21: IP/thiết bị chưa qua xác minh Cloudflare Turnstile; code 40: hết lượt đọc miễn phí.
-        if (String(body.code) === "21") {
+        // code 21: IP/thiết bị chưa qua xác minh Cloudflare Turnstile; code 40: hết lượt đọc miễn phí của khách.
+        if (code === "21") {
             return Response.error("truyen-h.com yêu cầu xác minh bảo mật. Hãy mở truyện này bằng trình duyệt trong vBook, đọc 1 chương trên web cho qua bước xác minh, rồi quay lại tải chương.");
         }
-        if (String(body.code) === "40") {
-            if (LOGIN_COOKIE) {
-                return Response.error("Cookie đăng nhập không còn dùng được (đã đăng xuất hoặc hết hạn). Hãy lấy lại Cookie của truyen-h.com và dán vào cài đặt extension.");
+        if (code === "40") {
+            if (pastedSession()) {
+                return Response.error("Phiên đăng nhập đã hết hạn hoặc đã đăng xuất. Hãy đăng nhập lại truyen-h.com trên trình duyệt, lấy cookie truyenh_session mới và dán vào cài đặt extension.");
             }
-            return Response.error("Khách chỉ đọc được vài chương. Hãy đăng nhập truyen-h.com trên trình duyệt, lấy chuỗi Cookie rồi dán vào mục \"Cookie đăng nhập\" trong cài đặt extension.");
+            return Response.error("Khách chỉ đọc được vài chương. Hãy đăng nhập truyen-h.com trên trình duyệt, lấy cookie truyenh_session rồi dán vào mục \"Cookie đăng nhập\" trong cài đặt extension.");
         }
         return Response.error("HTTP " + response.status);
     }
@@ -49,5 +50,15 @@ function execute(url) {
         let line = lines[i].trim();
         if (line) html += "<p>" + escapeHtml(line) + "</p>";
     }
-    return Response.success(html, chapter.title || "");
+    // Không trả tiêu đề ở data2: title của API chương đôi khi là cả một câu văn, giữ tên chương từ mục lục.
+    return Response.success(html, "");
+}
+
+function errorCode(response) {
+    if (response.ok) return "";
+    try {
+        return String(JSON.parse(response.text()).code);
+    } catch (error) {
+        return "";
+    }
 }

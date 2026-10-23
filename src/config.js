@@ -8,14 +8,17 @@ try {
 }
 
 // Trang chỉ cho khách đọc vài chương; đăng nhập phải qua Turnstile nên không làm được từ script.
-// Người dùng đăng nhập trên trình duyệt rồi dán chuỗi Cookie vào cài đặt COOKIE.
+// Phiên đăng nhập là cookie truyenh_session trong kho cookie của vBook. Cài đặt COOKIE chỉ dùng
+// để nạp lại phiên đó khi hết hạn — không gửi đè header Cookie, vì như vậy sẽ thay mất kho cookie.
 let LOGIN_COOKIE = "";
 try {
     if (COOKIE) {
-        LOGIN_COOKIE = String(COOKIE).replace(/^\s*cookie\s*:/i, "").trim();
+        LOGIN_COOKIE = String(COOKIE).trim();
     }
 } catch (error) {
 }
+
+const SESSION_COOKIE = "truyenh_session";
 
 const PAGE_SIZE = 20;
 
@@ -29,9 +32,45 @@ function getParam(url, name) {
 }
 
 function apiFetch(path) {
-    let headers = { "Accept": "application/json" };
-    if (LOGIN_COOKIE) headers["Cookie"] = LOGIN_COOKIE;
-    return fetch(BASE_URL + path, { headers: headers });
+    return fetch(BASE_URL + path, { headers: { "Accept": "application/json" } });
+}
+
+function findSession(cookieString) {
+    let m = new RegExp("(?:^|[;\\s])" + SESSION_COOKIE + "=([^;\\s]+)").exec(String(cookieString || ""));
+    return m ? m[1] : "";
+}
+
+// Nhận chuỗi header Cookie, JSON xuất từ Cookie-Editor, hoặc chỉ giá trị truyenh_session.
+function pastedSession() {
+    let text = LOGIN_COOKIE.replace(/^\s*cookie\s*:/i, "").trim();
+    if (!text) return "";
+    if (text.charAt(0) === "[" || text.charAt(0) === "{") {
+        try {
+            let list = JSON.parse(text);
+            if (!list.length) list = [list];
+            for (let i = 0; i < list.length; i++) {
+                if (list[i] && list[i].name === SESSION_COOKIE) return String(list[i].value || "");
+            }
+        } catch (error) {
+        }
+        return "";
+    }
+    if (/^[0-9a-f]{32,}$/i.test(text)) return text;
+    return findSession(text);
+}
+
+// Ghi phiên từ cài đặt vào kho cookie nếu khác phiên đang có; trả true nếu có thay đổi để thử lại.
+function usePastedSession() {
+    let pasted = pastedSession();
+    if (!pasted) return false;
+    let current = "";
+    try {
+        current = findSession(localCookie.getCookie());
+    } catch (error) {
+    }
+    if (pasted === current) return false;
+    localCookie.setCookie(SESSION_COOKIE + "=" + pasted + "; path=/");
+    return true;
 }
 
 function escapeHtml(text) {
